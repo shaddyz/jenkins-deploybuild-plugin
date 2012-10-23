@@ -1,0 +1,56 @@
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+  <!--
+    This jelly script is used for per-project configuration.
+
+    See global.jelly for a general discussion about jelly script.
+  -->
+  <f:entry>
+  
+    <table width="100%">
+      <col width="20%"/>
+      <col width="20%"/>
+      <col width="20%"/>
+      <col width="20%"/>
+      <col width="20%"/>
+      <tr>
+        <td>Cap script directory</td>
+        <td>Cap script filename</td>
+        <td>Deploy Name</td>
+        <td>Only on Success</td>
+        <td/>
+      </tr>
+    </table>
+
+      
+    <f:repeatable field="deployTargets">
+      <table width="100%">
+      <col width="20%"/>
+      <col width="20%"/>
+      <col width="20%"/>
+      <col width="20%"/>
+      <col width="20%"/>
+      <tr>
+        <td>
+          <f:textbox field="deployDir" default="recipes"/>
+        </td>
+      
+        <td>
+          <f:textbox field="deployFiles"  default="capfile"/>
+        </td>
+        
+        <td>
+          <f:textbox field="deployName" default="Deploy to QA Environment"/>
+        </td>
+        
+        <td>
+          <f:checkbox field="successOnly" default="true"/>
+        </td>
+        
+        <td>
+          <f:repeatableDeleteButton/>
+        </td>
+      </tr>
+      </table>
+    </f:repeatable>
+  </f:entry>
+</j:jelly>
