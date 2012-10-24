@@ -48,7 +48,6 @@ import javax.servlet.ServletException;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -139,8 +138,7 @@ public class DeployBuild extends Recorder {
     }
 
     @Override
-    public boolean perform(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener)
-            throws InterruptedException {
+    public boolean perform(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) throws InterruptedException {
         listener.getLogger().println("Checking for recipes...");
         
         for (int i=0; i < this.deployTargets.size(); i++) {
@@ -153,7 +151,7 @@ public class DeployBuild extends Recorder {
             try {
                 FilePath[] matches = build.getWorkspace().list(resolveParametersInString(build, listener, deployTarget.getDeployDir()));
                 if (matches.length == 0) {
-                    listener.error("directory does not exist"+deployTarget.getDeployDir());
+                    listener.error("script directory \"" + deployTarget.getDeployDir() + "\" is empty or does not exist");
                 } else if (matches.length > 1) {
                     listener.error("more than one path matched the pattern:");
                     for(FilePath p: matches) {
@@ -179,10 +177,10 @@ public class DeployBuild extends Recorder {
 
             FilePath targetDir = deployTarget.getArchiveTarget(build);
             
-            listener.getLogger().println("Doing stuff");
+            listener.getLogger().println("Found \"" + targetDir.getName() + "\"");
 
             // The index name might be a comma separated list of names, so let's figure out all the pages we should index.
-            String[] csvDeploys = resolveParametersInString(build, listener, deployTarget.getDeployFiles()).split(",");
+            String[] csvDeploys = resolveParametersInString(build, listener, deployTarget.getDeployFile()).split(",");
             ArrayList<String> deploys = new ArrayList<String>();
             for (int j=0; j < csvDeploys.length; j++) {
                 String deploy = csvDeploys[j];

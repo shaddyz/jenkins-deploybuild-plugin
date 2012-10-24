@@ -22,7 +22,7 @@ public class DeployBuildTest extends HudsonTestCase {
         assertEquals(2,r.deployTargets.size())
 
         (0..1).each {
-            assertEqualBeans(l[it],r.deployTargets[it],"deployName,deployDir,deployFiles,successOnly");
+            assertEqualBeans(l[it],r.deployTargets[it],"deployName,deployDir,deployFile,successOnly");
         }
     }
 

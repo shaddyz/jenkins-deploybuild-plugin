@@ -1,0 +1,27 @@
+<?jelly escape-by-default='true'?>
+<st:compress xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form" xmlns:i="jelly:fmt">
+  <l:layout title="${it.displayName}" norefresh="true">
+    <st:include it="${it.build}" page="sidepanel.jelly"/>
+    <l:main-panel>
+      <t:buildCaption>${it.displayName}</t:buildCaption>
+      <j:set var="threshold" value="${h.getSystemProperty('hudson.consoleTailKB')?:'150'}" />
+      <j:choose>
+        <!-- Do progressive console output -->
+        <j:when test="${it.isLogUpdated()}">
+          <pre id="out" />
+          <div id="spinner">
+            <img src="${imagesURL}/spinner.gif" alt="" /> 
+          </div>
+         <t:progressiveText href="logText/progressiveHtml" idref="out" spinner="spinner" startOffset="${offset}" />
+        </j:when>
+        <!-- output is completed now. -->
+        <j:otherwise>
+          <pre>
+            <st:getOutput var="output" />
+            <j:whitespace>${it.writeLogTo(offset,output)}</j:whitespace>
+          </pre>
+        </j:otherwise>
+      </j:choose>
+    </l:main-panel>
+  </l:layout>
+</st:compress>

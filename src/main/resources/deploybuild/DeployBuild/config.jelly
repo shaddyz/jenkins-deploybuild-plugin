@@ -31,11 +31,11 @@
       <col width="20%"/>
       <tr>
         <td>
-          <f:textbox field="deployDir" default="recipes"/>
+          <f:textbox field="deployDir" default="build"/>
         </td>
       
         <td>
-          <f:textbox field="deployFiles"  default="capfile"/>
+          <f:textbox field="deployFile"  default="capfile"/>
         </td>
         
         <td>
