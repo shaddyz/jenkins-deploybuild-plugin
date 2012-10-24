@@ -3,24 +3,48 @@
   <l:layout title="${it.displayName}" norefresh="true">
     <st:include it="${it.build}" page="sidepanel.jelly"/>
     <l:main-panel>
-      <t:buildCaption>${it.displayName}</t:buildCaption>
-      <j:set var="threshold" value="${h.getSystemProperty('hudson.consoleTailKB')?:'150'}" />
+      <h1>${it.displayName}</h1>
       <j:choose>
-        <!-- Do progressive console output -->
-        <j:when test="${it.isLogUpdated()}">
-          <pre id="out" />
-          <div id="spinner">
-            <img src="${imagesURL}/spinner.gif" alt="" /> 
-          </div>
-         <t:progressiveText href="logText/progressiveHtml" idref="out" spinner="spinner" startOffset="${offset}" />
-        </j:when>
-        <!-- output is completed now. -->
-        <j:otherwise>
-          <pre>
-            <st:getOutput var="output" />
-            <j:whitespace>${it.writeLogTo(offset,output)}</j:whitespace>
-          </pre>
-        </j:otherwise>
+          <j:when test="${it.isDeployed()}">
+              <j:set var="threshold" value="${h.getSystemProperty('hudson.consoleTailKB')?:'150'}" />
+              <!-- Show at most last 150KB (can override with system property) unless consoleFull is set -->
+              <j:set var="offset" value="${empty(consoleFull) ? it.logFile.length()-threshold*1024 : 0}" />
+              <j:choose>
+                <j:when test="${offset > 0}">
+                  ${%skipSome(offset/1024,"consoleFull")}
+                </j:when>
+                <j:otherwise>
+                  <j:set var="offset" value="${0}" />
+                </j:otherwise>
+              </j:choose>
+
+              <j:choose>
+                <!-- Do progressive console output -->
+                <j:when test="${it.isLogUpdated()}">
+                  <pre id="out" />
+                  <div id="spinner">
+                    <img src="${imagesURL}/spinner.gif" alt="" /> 
+                  </div>
+                 <t:progressiveText href="logText/progressiveHtml" idref="out" spinner="spinner" startOffset="${offset}" />
+                </j:when>
+                <!-- output is completed now. -->
+                <j:otherwise>
+                  <pre>
+                    <st:getOutput var="output" />
+                    <j:whitespace>${it.writeLogTo(offset,output)}</j:whitespace>
+                  </pre>
+                </j:otherwise>
+              </j:choose>
+              <br/>
+              <j:if test="${it.allowed()}">
+                <a href="deploy">Redeploy</a>
+              </j:if>
+          </j:when>
+          <j:otherwise>
+              <j:if test="${it.allowed()}">
+                <a href="deploy">Deploy Build</a>
+              </j:if>
+          </j:otherwise>
       </j:choose>
     </l:main-panel>
   </l:layout>
