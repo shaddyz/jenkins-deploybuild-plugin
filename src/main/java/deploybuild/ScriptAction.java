@@ -62,20 +62,22 @@ public class ScriptAction implements ProminentProjectAction {
     
     public void doDeploy(StaplerRequest req, StaplerResponse rsp) throws FileNotFoundException, IOException, ServletException, InterruptedException {
         this.build.checkPermission(Permission.UPDATE);
+        
         Computer computer = Computer.currentComputer();
         Charset charset = null;
         if (computer != null) {
             charset = computer.getDefaultCharset();
             this.charset = charset.name();
         }
-        FilePath workspace = this.target.getArchiveTarget(build);
+        
+        FilePath workspace = this.build.getWorkspace();
         OutputStream logger = new FileOutputStream(getLogFile());
         TaskListener listener = new StreamTaskListener(logger,charset);
         Launcher launcher = workspace.createLauncher(listener);
         CommandInterpreter batchRunner;
         FilePath script = new FilePath(workspace, this.target.getDeployFile());
         String scriptContent = getResolvedContentWithEnvVars(script);
-        listener.getLogger().println(String.format("Evaluating the script: \"%s\"", this.target.getDeployFile()));
+        listener.getLogger().println(String.format("Executing \"%s\"", this.target.getDeployFile()));
         FilePath tmpFile;
 
         if (launcher.isUnix()) {
@@ -83,10 +85,10 @@ public class ScriptAction implements ProminentProjectAction {
         } else {
             batchRunner = new BatchFile(scriptContent);
         }
+        tmpFile = batchRunner.createScriptFile(workspace);
         
         isLogUpdated = true;
         rsp.forward(this, "index", req);
-        tmpFile = batchRunner.createScriptFile(workspace);
         int r = launcher.launch().cmds(batchRunner.buildCommandLine(tmpFile)).stdout(listener).pwd(workspace).join();
         isLogUpdated = false;
     }
@@ -121,7 +123,10 @@ public class ScriptAction implements ProminentProjectAction {
     }
     
     public InputStream getLogInputStream() throws IOException {
-    	File logFile = getLogFile();
+    	if (logFile == null) {
+            logFile = getLogFile();
+        }
+        
     	if (logFile.exists() ) {
             return new FileInputStream(logFile);
     	}
@@ -135,7 +140,7 @@ public class ScriptAction implements ProminentProjectAction {
     }
     
     public final File getLogFile() {
-        return new File(this.build.getRootDir(),  this.target.getDeployFile() + "log");
+        return new File(this.build.getRootDir(),  "DeployBuild-" + this.target.getDeployFile() + ".log");
     }
 
     public Reader getLogReader() throws IOException {
@@ -145,18 +150,15 @@ public class ScriptAction implements ProminentProjectAction {
     
     public void writeLogTo(long offset, XMLOutput out) throws IOException {
         try {
-			getLogText().writeHtmlTo(offset,out.asWriter());
-		} catch (IOException e) {
-			// try to fall back to the old getLogInputStream()
-			// mainly to support .gz compressed files
-			// In this case, console annotation handling will be turned off.
-			InputStream input = getLogInputStream();
-			try {
-				IOUtils.copy(input, out.asWriter());
-			} finally {
-				IOUtils.closeQuietly(input);
-			}
-		}
+            getLogText().writeHtmlTo(offset,out.asWriter());
+        } catch (IOException e) {
+            InputStream input = getLogInputStream();
+            try {
+                    IOUtils.copy(input, out.asWriter());
+            } finally {
+                    IOUtils.closeQuietly(input);
+            }
+        }
     }
     
     public void writeWholeLogTo(OutputStream out) throws IOException, InterruptedException {
@@ -176,35 +178,28 @@ public class ScriptAction implements ProminentProjectAction {
         rsp.setContentType("text/plain;charset=UTF-8");
         // Prevent jelly from flushing stream so Content-Length header can be added afterwards
         FlushProofOutputStream out = new FlushProofOutputStream(rsp.getCompressedOutputStream(req));
-        try{
-        	getLogText().writeLogTo(0,out);
+        try {
+            getLogText().writeLogTo(0,out);
         } catch (IOException e) {
-			// see comment in writeLogTo() method
-			InputStream input = getLogInputStream();
-			try {
-				IOUtils.copy(input, out);
-			} finally {
-				IOUtils.closeQuietly(input);
-			}
-		}
+            // see comment in writeLogTo() method
+            InputStream input = getLogInputStream();
+            try {
+                    IOUtils.copy(input, out);
+            } finally {
+                    IOUtils.closeQuietly(input);
+            }
+        }
         out.close();
     }
     
-    private String getResolvedContentWithEnvVars(FilePath filePath) throws ServletException {
-        String scriptContentResolved;
-        try {
-            scriptContentResolved =
-                    filePath.act(new FilePath.FileCallable<String>() {
-                        public String invoke(File f, VirtualChannel channel) throws IOException, InterruptedException {
-                            String scriptContent = Util.loadFile(f);
-                            return Util.replaceMacro(scriptContent, EnvVars.masterEnvVars);
-                        }
-                    });
-        } catch (IOException ioe) {
-            throw new ServletException("Error to resolve environment variables", ioe);
-        } catch (InterruptedException ie) {
-            throw new ServletException("Error to resolve environment variables", ie);
-        }
+    private String getResolvedContentWithEnvVars(FilePath filePath) throws IOException, InterruptedException {
+        String scriptContentResolved = filePath.act(new FilePath.FileCallable<String>() {
+            public String invoke(File f, VirtualChannel channel) throws IOException, InterruptedException {
+                String scriptContent = Util.loadFile(f);
+                return Util.replaceMacro(scriptContent, EnvVars.masterEnvVars);
+            }
+        });
+        
         return scriptContentResolved;
     }
 }

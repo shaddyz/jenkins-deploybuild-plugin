@@ -79,22 +79,8 @@ public class DeployTarget extends AbstractDescribableImpl<DeployTarget> {
         return this.wrapperName;
     }
 
-    public FilePath getArchiveTarget(AbstractBuild build) {
-        return new FilePath(getBuildArchiveDir(build));
-    }
-    
-    /**
-     * Gets the directory where the HTML deploy is stored for the given build.
-     */
-    private File getBuildArchiveDir(Run run) {
-        return new File(new File(run.getRootDir(), "deploys"), this.getDeployFile());
-    }
-
     public void handleAction(AbstractBuild<?, ?> build) {
-        // Add build action, if coverage is recorded for each build
-        //if (this.successOnly) {
-            build.addAction(new ScriptAction(build, this));
-        //}
+        build.addAction(new ScriptAction(build, this));
     }
 
     @Extension
